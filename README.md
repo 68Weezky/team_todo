@@ -4,6 +4,16 @@ A production-ready Django app for team task management with role-based access, d
 
 ---
 
+## About the project
+
+**Team Todo** is a web application that helps teams plan work, assign tasks, and track progress in one place. It is built with Django and is suitable for small to medium teams (e.g. product, engineering, or support) that need a simple way to manage tasks by team and by person.
+
+**What it does:** Administrators can register users and assign roles (Admin, Team Leader, or Team Member). Team leaders create teams, invite members, and create tasks that they assign to members. Members see their assigned tasks, update status (Not Started → In Progress → Review → Completed), add comments and attachments, and view their own dashboard and calendar. Leaders get a dashboard with charts (tasks by priority, completion trend, workload), upcoming deadlines, and recent activity. Everyone can search tasks and export data; leaders get team analytics and reports. The app can send in-app and email notifications for new assignments, status changes, comments, and deadlines, and it can run a daily check for overdue tasks and reminders.
+
+**Tech stack:** Django 5, Bootstrap 5, Chart.js, FullCalendar; SQLite for development and PostgreSQL for production; optional deployment on Render with Gunicorn and WhiteNoise.
+
+---
+
 ## Features
 
 - **Roles**: Admin, Team Leader, Team Member (custom user model)
