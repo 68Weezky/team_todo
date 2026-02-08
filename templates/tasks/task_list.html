@@ -15,7 +15,7 @@
                     </h1>
                     <small class="text-muted">Team task management and tracking</small>
                 </div>
-                {% if user.is_team_leader or user.is_admin %}
+                {% if can_create_task %}
                     <a href="{% url 'users:task_create' team_id=team.pk %}" class="btn btn-success">
                         <i class="fas fa-plus"></i> New Task
                     </a>
@@ -187,7 +187,7 @@
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i>
                     No tasks found. 
-                    {% if user.is_team_leader or user.is_admin %}
+                    {% if can_create_task %}
                         <a href="{% url 'users:task_create' team_id=team.pk %}">Create the first task</a>
                     {% endif %}
                 </div>

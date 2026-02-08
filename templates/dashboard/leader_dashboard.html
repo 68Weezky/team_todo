@@ -105,11 +105,29 @@
 <div class="row g-3 mb-4">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-body d-flex flex-wrap gap-2">
+            <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+                {% if teams %}
+                    <a href="{% url 'users:task_create' team_id=teams.0.pk %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Create Task
+                    </a>
+                    {% if teams|length > 1 %}
+                        <span class="text-muted small">(in {{ teams.0.name }})</span>
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-outline-success dropdown-toggle" type="button" id="createTaskDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Create in another team
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="createTaskDropdown">
+                                {% for t in teams %}
+                                    <li><a class="dropdown-item" href="{% url 'users:task_create' team_id=t.pk %}">{{ t.name }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                {% endif %}
                 <a href="{% url 'users:team_list' %}" class="btn btn-outline-primary">
                     <i class="fas fa-users"></i> View All Teams
                 </a>
-                <a href="{% url 'users:team_create' %}" class="btn btn-success">
+                <a href="{% url 'users:team_create' %}" class="btn btn-outline-secondary">
                     <i class="fas fa-plus"></i> Create New Team
                 </a>
             </div>

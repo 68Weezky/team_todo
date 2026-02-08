@@ -191,6 +191,7 @@ def task_list(request, team_id):
         status__in=['not_started', 'in_progress', 'review']
     ).count()
     
+    can_create_task = team.is_leader(request.user) or request.user.is_admin()
     context = {
         'team': team,
         'tasks': tasks,
@@ -199,6 +200,7 @@ def task_list(request, team_id):
         'completed_tasks': completed_tasks,
         'in_progress_tasks': in_progress_tasks,
         'overdue_tasks': overdue_tasks,
+        'can_create_task': can_create_task,
     }
     
     return render(request, 'tasks/task_list.html', context)

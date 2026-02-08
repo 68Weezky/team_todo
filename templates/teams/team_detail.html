@@ -13,8 +13,14 @@
                     <i class="fas fa-calendar"></i> Created on {{ team.created_at|date:"F d, Y" }}
                 </p>
             </div>
-            <div class="btn-group" role="group">
+            <div class="btn-group flex-wrap" role="group">
                 {% if is_leader %}
+                    <a href="{% url 'users:task_list' team_id=team.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-tasks"></i> Tasks
+                    </a>
+                    <a href="{% url 'users:task_create' team_id=team.pk %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Create Task
+                    </a>
                     <a href="{% url 'users:team_edit' team.pk %}" class="btn btn-outline-primary">
                         <i class="fas fa-edit"></i> Edit
                     </a>
@@ -25,6 +31,9 @@
                         <i class="fas fa-trash"></i> Delete
                     </a>
                 {% else %}
+                    <a href="{% url 'users:task_list' team_id=team.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-tasks"></i> Tasks
+                    </a>
                     <form method="post" action="{% url 'users:leave_team' team.pk %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-outline-warning" onclick="return confirm('Are you sure you want to leave this team?');">
