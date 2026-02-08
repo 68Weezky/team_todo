@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ team.name }} - Team Todo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <!-- Team Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h2 class="page-heading mb-2">{{ team.name }}</h2>
+                <p class="text-muted">
+                    <i class="fas fa-calendar"></i> Created on {{ team.created_at|date:"F d, Y" }}
+                </p>
+            </div>
+            <div class="btn-group" role="group">
+                {% if is_leader %}
+                    <a href="{% url 'users:team_edit' team.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{% url 'users:manage_members' team.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-user-plus"></i> Members
+                    </a>
+                    <a href="{% url 'users:team_delete' team.pk %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                {% else %}
+                    <form method="post" action="{% url 'users:leave_team' team.pk %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-warning" onclick="return confirm('Are you sure you want to leave this team?');">
+                            <i class="fas fa-sign-out-alt"></i> Leave Team
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Team Info -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Team Details</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Leader:</dt>
+                            <dd class="col-sm-8">
+                                <strong>{{ team.leader.get_display_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ team.leader.email }}</small>
+                            </dd>
+
+                            <dt class="col-sm-4">Members:</dt>
+                            <dd class="col-sm-8">
+                                <strong>{{ team.get_member_count }}</strong>
+                            </dd>
+
+                            <dt class="col-sm-4">Status:</dt>
+                            <dd class="col-sm-8">
+                                {% if team.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Description</h5>
+                        {% if team.description %}
+                            <p class="card-text">{{ team.description }}</p>
+                        {% else %}
+                            <p class="text-muted"><em>No description provided</em></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Members -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users"></i> Team Members ({{ team.get_member_count }})
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Team Leader -->
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if team.leader.profile_picture %}
+                                        <img src="{{ team.leader.profile_picture.url }}" alt="{{ team.leader.get_display_name }}" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                                            {{ team.leader.first_name|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <strong>{{ team.leader.get_display_name }}</strong>
+                                </div>
+                            </td>
+                            <td>{{ team.leader.email }}</td>
+                            <td><span class="badge bg-warning">Leader</span></td>
+                            <td>{{ team.created_at|date:"M d, Y" }}</td>
+                        </tr>
+
+                        <!-- Team Members -->
+                        {% for membership in members %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if membership.member.profile_picture %}
+                                            <img src="{{ membership.member.profile_picture.url }}" alt="{{ membership.member.get_display_name }}" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                                        {% else %}
+                                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                                                {{ membership.member.first_name|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                        {{ membership.member.get_display_name }}
+                                    </div>
+                                </td>
+                                <td>{{ membership.member.email }}</td>
+                                <td><span class="badge bg-info">Member</span></td>
+                                <td>{{ membership.date_joined|date:"M d, Y" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

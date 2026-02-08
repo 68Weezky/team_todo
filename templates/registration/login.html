@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Team Todo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 col-lg-5 mx-auto">
+        <div class="card">
+            <div class="card-body p-5">
+                <h2 class="card-title text-center mb-4">
+                    <i class="fas fa-sign-in-alt" style="color: var(--primary-color);"></i>
+                    Login to Your Account
+                </h2>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">Email Address</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.password.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <label class="form-check-label" for="id_remember_me">
+                            {{ form.remember_me }}
+                            Remember me
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mb-3">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </form>
+
+                <hr>
+
+                <div class="text-center">
+                    <p class="mb-3">
+                        <a href="{% url 'users:password_reset' %}">Forgot your password?</a>
+                    </p>
+                    <p>
+                        Don't have an account?
+                        <a href="{% url 'users:register' %}" class="fw-bold">Create one here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

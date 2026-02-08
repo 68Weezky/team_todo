@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Team Analytics - {{ team.name }}{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h2 class="page-heading">Team Analytics - {{ team.name }}</h2>
+        <a href="{% url 'users:export_tasks_csv' %}?team_id={{ team.id }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form class="row g-2">
+            <div class="col-auto">
+                <label class="form-label small mb-0">Start</label>
+                <input type="date" name="start" class="form-control form-control-sm"
+                       value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">End</label>
+                <input type="date" name="end" class="form-control form-control-sm"
+                       value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto d-flex align-items-end">
+                <button class="btn btn-primary btn-sm" type="submit">
+                    <i class="fas fa-sync-alt"></i> Apply
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Average Completion Time (hrs)</h6>
+                <h3>{{ avg_completion_hours }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Tasks Completed Over Time</h6>
+                <canvas id="completedChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Tasks by Priority</h6>
+                <canvas id="priorityDistChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="mb-3">Member Productivity</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th class="text-end">Tasks Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in member_productivity %}
+                                <tr>
+                                    <td>
+                                        {{ row.assigned_to__first_name }} {{ row.assigned_to__last_name }}
+                                    </td>
+                                    <td class="text-end">
+                                        {{ row.count }}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">
+                                        No completed tasks in the selected period.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const completedTrend = {{ completed_trend_json|safe }};
+        const priorityDist = {{ priority_distribution_json|safe }};
+
+        const completedCtx = document.getElementById('completedChart');
+        if (completedCtx && completedTrend.length) {
+            new Chart(completedCtx, {
+                type: 'line',
+                data: {
+                    labels: completedTrend.map(p => p.day),
+                    datasets: [{
+                        label: 'Completed',
+                        data: completedTrend.map(p => p.count),
+                        borderColor: '#10b981',
+                        tension: 0.3,
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        const priorityCtx = document.getElementById('priorityDistChart');
+        if (priorityCtx && priorityDist.length) {
+            new Chart(priorityCtx, {
+                type: 'bar',
+                data: {
+                    labels: priorityDist.map(p => p.priority),
+                    datasets: [{
+                        label: 'Tasks',
+                        data: priorityDist.map(p => p.count),
+                        backgroundColor: '#3b82f6',
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+

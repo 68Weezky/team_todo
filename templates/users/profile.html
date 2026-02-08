@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Team Todo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-body p-5">
+                <h2 class="card-title mb-4">
+                    <i class="fas fa-user-circle"></i> User Profile
+                </h2>
+
+                <div class="row mb-4">
+                    <div class="col-md-3 text-center">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="{{ user.get_display_name }}" class="img-fluid rounded-circle border border-3" style="max-width: 150px;">
+                        {% else %}
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 150px; height: 150px;">
+                                <span style="font-size: 3rem; color: var(--primary-color);">{{ user.first_name|first|upper }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-9">
+                        <dl class="row">
+                            <dt class="col-sm-3">Name:</dt>
+                            <dd class="col-sm-9">{{ user.get_full_name }}</dd>
+
+                            <dt class="col-sm-3">Email:</dt>
+                            <dd class="col-sm-9">{{ user.email }}</dd>
+
+                            <dt class="col-sm-3">Role:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge bg-primary">{{ user.get_role_display }}</span>
+                            </dd>
+
+                            <dt class="col-sm-3">Status:</dt>
+                            <dd class="col-sm-9">
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </dd>
+
+                            <dt class="col-sm-3">Joined:</dt>
+                            <dd class="col-sm-9">{{ user.date_joined|date:"F d, Y" }}</dd>
+                            
+                            <dt class="col-sm-3">Last Updated:</dt>
+                            <dd class="col-sm-9">{{ user.date_updated|date:"F d, Y H:i" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h4 class="mb-4">Edit Profile</h4>
+
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_first_name" class="form-label">First Name</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.first_name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_last_name" class="form-label">Last Name</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.last_name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_phone" class="form-label">Phone Number</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.phone.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_bio" class="form-label">Bio</label>
+                        {{ form.bio }}
+                        <small class="text-muted d-block mt-1">Tell us about yourself (optional)</small>
+                        {% if form.bio.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.bio.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_profile_picture" class="form-label">Profile Picture</label>
+                        {% if user.profile_picture %}
+                            <p class="text-muted small">Current: <a href="{{ user.profile_picture.url }}" target="_blank">{{ user.profile_picture.name }}</a></p>
+                        {% endif %}
+                        {{ form.profile_picture }}
+                        <small class="text-muted d-block mt-1">Upload a new profile picture (optional)</small>
+                        {% if form.profile_picture.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.profile_picture.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="reset" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+
+                <hr class="my-4">
+
+                <h4 class="mb-4">Change Password</h4>
+                <p class="text-muted mb-3">
+                    To change your password, <a href="{% url 'users:password_reset' %}">click here</a> to request a password reset link.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

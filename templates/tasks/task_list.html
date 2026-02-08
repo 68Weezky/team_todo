@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Tasks - {{ team.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="mb-0">
+                        <i class="fas fa-tasks" style="color: var(--primary-color);"></i>
+                        {{ team.name }} Tasks
+                    </h1>
+                    <small class="text-muted">Team task management and tracking</small>
+                </div>
+                {% if user.is_team_leader or user.is_admin %}
+                    <a href="{% url 'users:task_create' team_id=team.pk %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> New Task
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted small">Total Tasks</h5>
+                    <h2 class="mb-0">{{ total_tasks }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted small">
+                        <i class="fas fa-spinner text-primary"></i> In Progress
+                    </h5>
+                    <h2 class="mb-0 text-primary">{{ in_progress_tasks }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted small">
+                        <i class="fas fa-check-circle text-success"></i> Completed
+                    </h5>
+                    <h2 class="mb-0 text-success">{{ completed_tasks }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted small">
+                        <i class="fas fa-exclamation-circle text-danger"></i> Overdue
+                    </h5>
+                    <h2 class="mb-0 text-danger">{{ overdue_tasks }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    {{ filter_form.search }}
+                </div>
+                <div class="col-md-2">
+                    {{ filter_form.sort_by }}
+                </div>
+                <div class="col-md-3">
+                    {{ filter_form.assigned_to }}
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </form>
+
+            <!-- Status and Priority Filters -->
+            <div class="mt-3">
+                <small class="text-muted">Status:</small>
+                <div class="btn-group btn-group-sm flex-wrap" role="group">
+                    {% for value, label in filter_form.status.field.choices %}
+                        <label class="btn btn-outline-secondary">
+                            <input type="checkbox" name="status" value="{{ value }}" 
+                                   {% if value in filter_form.status.value %}checked{% endif %}>
+                            {{ label }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mt-2">
+                <small class="text-muted">Priority:</small>
+                <div class="btn-group btn-group-sm flex-wrap" role="group">
+                    {% for value, label in filter_form.priority.field.choices %}
+                        <label class="btn btn-outline-secondary">
+                            <input type="checkbox" name="priority" value="{{ value }}" 
+                                   {% if value in filter_form.priority.value %}checked{% endif %}>
+                            {{ label }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task List -->
+    <div class="row g-3">
+        {% if tasks %}
+            {% for task in tasks %}
+                <div class="col-md-6 col-lg-4">
+                    <a href="{% url 'users:task_detail' team_id=team.pk task_id=task.pk %}" class="text-decoration-none">
+                        <div class="card h-100 task-card" style="cursor: pointer; transition: all 0.3s ease;">
+                            <div class="card-body">
+                                <!-- Status Badge -->
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary">{{ task.get_status_display }}</span>
+                                    {% if task.is_urgent %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-flag"></i> Urgent
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Title -->
+                                <h5 class="card-title">
+                                    {% if task.is_overdue %}
+                                        <i class="fas fa-exclamation-circle text-danger"></i>
+                                    {% endif %}
+                                    {{ task.title }}
+                                </h5>
+
+                                <!-- Priority Badge -->
+                                <p class="card-text mb-2">
+                                    <span class="badge bg-{{ task.get_priority_color }}">
+                                        {{ task.get_priority_display }} Priority
+                                    </span>
+                                </p>
+
+                                <!-- Assigned To -->
+                                {% if task.assigned_to %}
+                                    <p class="card-text small text-muted mb-2">
+                                        <i class="fas fa-user-circle"></i>
+                                        {{ task.assigned_to.get_display_name }}
+                                    </p>
+                                {% else %}
+                                    <p class="card-text small text-muted mb-2">
+                                        <i class="fas fa-user-circle"></i>
+                                        Unassigned
+                                    </p>
+                                {% endif %}
+
+                                <!-- Due Date -->
+                                {% if task.due_date %}
+                                    <p class="card-text small text-muted mb-2">
+                                        <i class="fas fa-calendar"></i>
+                                        Due {{ task.due_date|naturalday:"SHORT_DATE_FORMAT" }}
+                                        {% if task.is_overdue %}
+                                            <span class="badge bg-danger">Overdue</span>
+                                        {% endif %}
+                                    </p>
+                                {% endif %}
+
+                                <!-- Comments and Attachments -->
+                                <div class="small text-muted">
+                                    <i class="fas fa-comments"></i> {{ task.comments.count }}
+                                    <i class="fas fa-paperclip ms-2"></i> {{ task.attachments.count }}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    No tasks found. 
+                    {% if user.is_team_leader or user.is_admin %}
+                        <a href="{% url 'users:task_create' team_id=team.pk %}">Create the first task</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .task-card {
+        border: 1px solid #e0e0e0;
+    }
+    .task-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: var(--primary-color);
+    }
+</style>
+{% endblock %}

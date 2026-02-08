@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ action }} - {{ team.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-8 mx-auto">
+            <a href="{% url 'users:task_list' team_id=team.pk %}" class="text-decoration-none text-muted small">
+                <i class="fas fa-arrow-left"></i> Back to Tasks
+            </a>
+            <h1 class="mt-2">{{ action }}</h1>
+            <p class="text-muted">{{ team.name }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" class="needs-validation">
+                        {% csrf_token %}
+
+                        <!-- Title -->
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                <strong>Task Title</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                Description
+                            </label>
+                            {{ form.description }}
+                            <small class="form-text text-muted">
+                                Provide detailed information about the task
+                            </small>
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <!-- Assign To -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.assigned_to.id_for_label }}" class="form-label">
+                                    Assign to
+                                </label>
+                                {{ form.assigned_to }}
+                                <small class="form-text text-muted d-block">
+                                    Optional - assign to a team member
+                                </small>
+                                {% if form.assigned_to.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.assigned_to.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Priority -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                    <strong>Priority</strong>
+                                </label>
+                                {{ form.priority }}
+                                {% if form.priority.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.priority.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Due Date -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.due_date.id_for_label }}" class="form-label">
+                                    Due Date
+                                </label>
+                                {{ form.due_date }}
+                                <small class="form-text text-muted d-block">
+                                    Must be in the future
+                                </small>
+                                {% if form.due_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.due_date.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Tags -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.tags.id_for_label }}" class="form-label">
+                                    Tags
+                                </label>
+                                {{ form.tags }}
+                                <small class="form-text text-muted d-block">
+                                    Comma-separated (e.g., urgent, backend, design)
+                                </small>
+                                {% if form.tags.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.tags.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                {% if action == 'Create Task' %}
+                                    Create Task
+                                {% else %}
+                                    Save Changes
+                                {% endif %}
+                            </button>
+                            <a href="{% url 'users:task_list' team_id=team.pk %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Text -->
+            <div class="alert alert-info mt-3" role="alert">
+                <h6 class="alert-heading">
+                    <i class="fas fa-lightbulb"></i> Tips
+                </h6>
+                <ul class="mb-0 small">
+                    <li>Be descriptive with your task title</li>
+                    <li>Set appropriate priority levels</li>
+                    <li>Assign tasks to specific team members</li>
+                    <li>Set realistic due dates</li>
+                    <li>Use tags to organize and filter tasks</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

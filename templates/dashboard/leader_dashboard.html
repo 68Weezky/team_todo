@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Leader Dashboard - Team Todo{% endblock %}
+
+{% block extra_js %}
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-3">
+        <h2 class="page-heading">Team Leader Dashboard</h2>
+    </div>
+</div>
+
+<!-- Overview Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Total Tasks</h6>
+                <h3>{{ total_tasks }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Overdue</h6>
+                <h3 class="text-danger">{{ overdue_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Due This Week</h6>
+                <h3 class="text-warning">{{ due_this_week_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Teams</h6>
+                <h3>{{ teams|length }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Breakdown -->
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="mb-3">Tasks by Status</h6>
+                <div class="d-flex flex-wrap gap-3">
+                    {% for row in status_counts %}
+                        <div>
+                            <span class="badge bg-light text-dark">
+                                {{ row.status|capfirst }}: {{ row.count }}
+                            </span>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted mb-0">No tasks found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Tasks by Priority</h6>
+                <canvas id="priorityChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Completion Trend (Last 30 Days)</h6>
+                <canvas id="completionChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Team Member Workload</h6>
+                <canvas id="workloadChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body d-flex flex-wrap gap-2">
+                <a href="{% url 'users:team_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-users"></i> View All Teams
+                </a>
+                <a href="{% url 'users:team_create' %}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Create New Team
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity & Upcoming Deadlines -->
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Recent Activity</h6>
+                <ul class="list-group list-group-flush small">
+                    {% for activity in recent_activities %}
+                        <li class="list-group-item">
+                            <strong>{{ activity.user.get_display_name }}</strong>
+                            {{ activity.description }}
+                            <br>
+                            <small class="text-muted">
+                                {{ activity.created_at|naturaltime }} · {{ activity.task.title }}
+                            </small>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">No recent activity.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Upcoming Deadlines (Next 7 Days)</h6>
+                <ul class="list-group list-group-flush small">
+                    {% for task in upcoming_deadlines %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <a href="{% url 'users:task_detail' team_id=task.team.id task_id=task.id %}">
+                                    {{ task.title }}
+                                </a>
+                                <br>
+                                <small class="text-muted">
+                                    Due {{ task.due_date|naturaltime }} · {{ task.team.name }}
+                                </small>
+                            </div>
+                            <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">No upcoming deadlines.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const priorityData = {{ priority_counts_json|safe }};
+        const completionTrend = {{ completion_trend_json|safe }};
+        const workloadData = {{ workload_json|safe }};
+
+        // Priority Pie Chart
+        const priorityCtx = document.getElementById('priorityChart');
+        if (priorityCtx && priorityData.length) {
+            new Chart(priorityCtx, {
+                type: 'pie',
+                data: {
+                    labels: priorityData.map(p => p.priority),
+                    datasets: [{
+                        data: priorityData.map(p => p.count),
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#111827'],
+                    }]
+                },
+            });
+        }
+
+        // Completion Trend Line Chart
+        const completionCtx = document.getElementById('completionChart');
+        if (completionCtx && completionTrend.length) {
+            new Chart(completionCtx, {
+                type: 'line',
+                data: {
+                    labels: completionTrend.map(p => p.day),
+                    datasets: [{
+                        label: 'Completed Tasks',
+                        data: completionTrend.map(p => p.count),
+                        borderColor: '#4f46e5',
+                        tension: 0.3,
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Workload Bar Chart
+        const workloadCtx = document.getElementById('workloadChart');
+        if (workloadCtx && workloadData.length) {
+            new Chart(workloadCtx, {
+                type: 'bar',
+                data: {
+                    labels: workloadData.map(p => (p.assigned_to__first_name || '') + ' ' + (p.assigned_to__last_name || '')),
+                    datasets: [{
+                        label: 'Tasks',
+                        data: workloadData.map(p => p.count),
+                        backgroundColor: '#3b82f6',
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+

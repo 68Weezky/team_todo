@@ -1,0 +1,50 @@
+{% load humanize %}
+<a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="fas fa-bell"></i>
+    {% if navbar_unread_notification_count %}
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            {{ navbar_unread_notification_count }}
+        </span>
+    {% endif %}
+</a>
+<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 320px;">
+    <li class="dropdown-header d-flex justify-content-between align-items-center">
+        <span>Notifications</span>
+        <a href="{% url 'users:notification_mark_all_read' %}" class="small">Mark all read</a>
+    </li>
+    <li>
+        <hr class="dropdown-divider">
+    </li>
+
+    {% if navbar_recent_notifications %}
+        {% for notification in navbar_recent_notifications %}
+            <li>
+                <a class="dropdown-item d-flex justify-content-between align-items-start {% if not notification.is_read %}fw-semibold{% endif %}"
+                   href="{% url 'users:notification_mark_read' notification.pk %}">
+                    <div>
+                        <div>{{ notification.message }}</div>
+                        <small class="text-muted">
+                            {{ notification.created_at|naturaltime }}
+                        </small>
+                    </div>
+                    {% if notification.task %}
+                        <span class="badge bg-light text-dark ms-2">{{ notification.task.team.name }}</span>
+                    {% endif %}
+                </a>
+            </li>
+        {% endfor %}
+        <li>
+            <hr class="dropdown-divider">
+        </li>
+        <li>
+            <a class="dropdown-item text-center small" href="{% url 'users:notification_list' %}">
+                View all notifications
+            </a>
+        </li>
+    {% else %}
+        <li class="px-3 py-2 text-center text-muted small">
+            No notifications.
+        </li>
+    {% endif %}
+</ul>
+

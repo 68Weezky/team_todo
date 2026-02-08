@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Statistics - Team Todo{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h2 class="page-heading">My Statistics</h2>
+        <a href="{% url 'users:export_personal_tasks_pdf' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-file-pdf"></i> Export PDF
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Completed This Week</h6>
+                <h3 class="text-success">{{ completed_this_week }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Completed This Month</h6>
+                <h3 class="text-primary">{{ completed_this_month }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Avg Tasks / Day</h6>
+                <h3>{{ avg_tasks_per_day }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Completion Rate</h6>
+                <h3>{{ completion_rate }}%</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Productivity (Last 30 Days)</h6>
+                <canvas id="productivityChart" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Tips</h6>
+                <ul class="small mb-0">
+                    <li>Keep tasks updated with accurate statuses.</li>
+                    <li>Break large tasks into smaller, manageable pieces.</li>
+                    <li>Use priorities to focus on what matters most.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const productivityTrend = {{ productivity_trend_json|safe }};
+        const ctx = document.getElementById('productivityChart');
+        if (ctx && productivityTrend.length) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: productivityTrend.map(p => p.day),
+                    datasets: [{
+                        label: 'Tasks Completed',
+                        data: productivityTrend.map(p => p.count),
+                        borderColor: '#4f46e5',
+                        tension: 0.3,
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+

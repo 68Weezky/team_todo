@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Search Results - Team Todo{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2 class="page-heading">Search Results</h2>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <form class="row g-2" method="get">
+            <div class="col-md-4">
+                <input type="text" name="q" class="form-control" placeholder="Search tasks..."
+                       value="{{ query }}">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    {% for key, label in task.status.field.choices %}
+                        <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="priority" class="form-select">
+                    <option value="">All Priorities</option>
+                    {% for key, label in task.priority.field.choices %}
+                        <option value="{{ key }}" {% if priority == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if page_obj %}
+                    <p class="small text-muted mb-2">
+                        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} results.
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Team</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Due</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in page_obj %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'users:task_detail' team_id=t.team.id task_id=t.id %}">
+                                                {{ t.title }}
+                                            </a>
+                                            {% if query %}
+                                                <div class="small text-muted">
+                                                    {{ t.description|truncatechars:140 }}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ t.team.name }}</td>
+                                        <td>{{ t.get_status_display }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ t.get_priority_color }}">{{ t.get_priority_display }}</span>
+                                        </td>
+                                        <td>
+                                            {% if t.due_date %}
+                                                {{ t.due_date|naturaltime }}
+                                            {% else %}
+                                                <span class="text-muted small">No due date</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'users:task_detail' team_id=t.team.id task_id=t.id %}" class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if page_obj.has_other_pages %}
+                        <nav class="mt-3">
+                            <ul class="pagination pagination-sm justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status }}&priority={{ priority }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status }}&priority={{ priority }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted mb-0">No results found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

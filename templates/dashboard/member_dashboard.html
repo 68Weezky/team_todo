@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Dashboard - Team Todo{% endblock %}
+
+{% block extra_css %}
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2 class="page-heading">My Dashboard</h2>
+    </div>
+</div>
+
+<!-- Personal Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">My Total Tasks</h6>
+                <h3>{{ my_total_tasks }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Completed (Last 7 Days)</h6>
+                <h3 class="text-success">{{ completed_this_week }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">In Progress</h6>
+                <h3 class="text-primary">{{ in_progress_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Overdue</h6>
+                <h3 class="text-danger">{{ overdue_count }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Tasks by Status -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">My Tasks by Status</h6>
+                <ul class="nav nav-pills mb-3" id="statusTabs" role="tablist">
+                    {% for key, label in task.status.field.choices %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {% if forloop.first %}active{% endif %}" id="tab-{{ key }}-tab" data-bs-toggle="tab" data-bs-target="#tab-{{ key }}" type="button" role="tab">
+                                {{ label }}
+                            </button>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div class="tab-content">
+                    {% for key, label in task.status.field.choices %}
+                        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="tab-{{ key }}" role="tabpanel">
+                            <ul class="list-group list-group-flush small">
+                                {% for t in tasks_by_status.key %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <a href="{% url 'users:task_detail' team_id=t.team.id task_id=t.id %}">
+                                                {{ t.title }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">
+                                                {% if t.due_date %}
+                                                    Due {{ t.due_date|naturaltime }}
+                                                {% else %}
+                                                    No due date
+                                                {% endif %}
+                                                · {{ t.team.name }}
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-{{ t.get_priority_color }}">{{ t.get_priority_display }}</span>
+                                    </li>
+                                {% empty %}
+                                    <li class="list-group-item text-muted">No tasks in this status.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">My Task Calendar</h6>
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Recently Assigned to Me</h6>
+                <ul class="list-group list-group-flush small">
+                    {% for t in recently_assigned %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <a href="{% url 'users:task_detail' team_id=t.team.id task_id=t.id %}">
+                                    {{ t.title }}
+                                </a>
+                                <br>
+                                <small class="text-muted">
+                                    Assigned {{ t.created_at|naturaltime }} · {{ t.team.name }}
+                                </small>
+                            </div>
+                            <span class="badge bg-{{ t.get_priority_color }}">{{ t.get_priority_display }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">No recent assignments.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-3">Recent Comments on My Tasks</h6>
+                <ul class="list-group list-group-flush small">
+                    {% for c in recent_comments %}
+                        <li class="list-group-item">
+                            <strong>{{ c.user.get_display_name }}</strong> commented on
+                            <a href="{% url 'users:task_detail' team_id=c.task.team.id task_id=c.task.id %}">
+                                {{ c.task.title }}
+                            </a>
+                            <br>
+                            <small class="text-muted">
+                                {{ c.created_at|naturaltime }}
+                            </small>
+                            <div class="mt-1">
+                                {{ c.comment|truncatechars:120 }}
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">No recent comments.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+        if (calendarEl) {
+            const events = {{ calendar_events_json|safe }};
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                height: 400,
+                events: events,
+            });
+            calendar.render();
+        }
+    });
+</script>
+{% endblock %}
+

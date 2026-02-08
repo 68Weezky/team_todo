@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="mb-0">
+                        <i class="fas fa-tasks" style="color: var(--primary-color);"></i>
+                        My Tasks
+                    </h1>
+                    <small class="text-muted">Your personal task dashboard</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted small">Assigned to Me</h5>
+                    <h2 class="mb-0">{{ total_assigned }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted small">
+                        <i class="fas fa-spinner text-primary"></i> In Progress
+                    </h5>
+                    <h2 class="mb-0 text-primary">{{ in_progress }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted small">
+                        <i class="fas fa-check-circle text-success"></i> Completed
+                    </h5>
+                    <h2 class="mb-0 text-success">{{ completed }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted small">
+                        <i class="fas fa-exclamation-circle text-danger"></i> Overdue
+                    </h5>
+                    <h2 class="mb-0 text-danger">{{ overdue }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="assigned-tab" data-bs-toggle="tab" 
+                    data-bs-target="#assigned-tasks" type="button" role="tab">
+                <i class="fas fa-inbox"></i> Assigned to Me
+                <span class="badge bg-secondary ms-2">{{ total_assigned }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="created-tab" data-bs-toggle="tab" 
+                    data-bs-target="#created-tasks" type="button" role="tab">
+                <i class="fas fa-pencil"></i> Created by Me
+                <span class="badge bg-secondary ms-2">{{ created_tasks.count }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Assigned Tasks -->
+        <div class="tab-pane fade show active" id="assigned-tasks" role="tabpanel">
+            {% if assigned_tasks %}
+                <div class="row g-3">
+                    {% for task in assigned_tasks %}
+                        <div class="col-md-6 col-lg-4">
+                            <a href="{% url 'users:task_detail' team_id=task.team.pk task_id=task.pk %}" class="text-decoration-none">
+                                <div class="card h-100 task-card" style="cursor: pointer; transition: all 0.3s ease;">
+                                    <div class="card-body">
+                                        <!-- Team Badge -->
+                                        <div class="mb-2">
+                                            <span class="badge bg-light text-dark">{{ task.team.name }}</span>
+                                        </div>
+
+                                        <!-- Status -->
+                                        <span class="badge bg-secondary mb-2 d-inline-block">
+                                            {{ task.get_status_display }}
+                                        </span>
+
+                                        <!-- Title -->
+                                        <h5 class="card-title mt-2">
+                                            {% if task.is_overdue %}
+                                                <i class="fas fa-exclamation-circle text-danger"></i>
+                                            {% endif %}
+                                            {{ task.title }}
+                                        </h5>
+
+                                        <!-- Priority -->
+                                        <p class="card-text mb-2">
+                                            <span class="badge bg-{{ task.get_priority_color }}">
+                                                {{ task.get_priority_display }} Priority
+                                            </span>
+                                        </p>
+
+                                        <!-- Due Date -->
+                                        {% if task.due_date %}
+                                            <p class="card-text small text-muted">
+                                                <i class="fas fa-calendar"></i>
+                                                Due {{ task.due_date|naturalday:"SHORT_DATE_FORMAT" }}
+                                                {% if task.is_overdue %}
+                                                    <span class="badge bg-danger ms-1">Overdue</span>
+                                                {% endif %}
+                                            </p>
+                                        {% endif %}
+
+                                        <!-- Comments -->
+                                        <small class="text-muted">
+                                            <i class="fas fa-comments"></i> {{ task.comments.count }} comments
+                                        </small>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    No tasks assigned to you yet.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Created Tasks -->
+        <div class="tab-pane fade" id="created-tasks" role="tabpanel">
+            {% if created_tasks %}
+                <div class="row g-3">
+                    {% for task in created_tasks %}
+                        <div class="col-md-6 col-lg-4">
+                            <a href="{% url 'users:task_detail' team_id=task.team.pk task_id=task.pk %}" class="text-decoration-none">
+                                <div class="card h-100 task-card" style="cursor: pointer; transition: all 0.3s ease;">
+                                    <div class="card-body">
+                                        <!-- Team Badge -->
+                                        <div class="mb-2">
+                                            <span class="badge bg-light text-dark">{{ task.team.name }}</span>
+                                        </div>
+
+                                        <!-- Status -->
+                                        <span class="badge bg-secondary mb-2 d-inline-block">
+                                            {{ task.get_status_display }}
+                                        </span>
+
+                                        <!-- Title -->
+                                        <h5 class="card-title mt-2">
+                                            {% if task.is_overdue %}
+                                                <i class="fas fa-exclamation-circle text-danger"></i>
+                                            {% endif %}
+                                            {{ task.title }}
+                                        </h5>
+
+                                        <!-- Assigned To -->
+                                        <p class="card-text small mb-2">
+                                            {% if task.assigned_to %}
+                                                Assigned to: <strong>{{ task.assigned_to.first_name }}</strong>
+                                            {% else %}
+                                                <span class="text-muted">Unassigned</span>
+                                            {% endif %}
+                                        </p>
+
+                                        <!-- Priority -->
+                                        <p class="card-text mb-2">
+                                            <span class="badge bg-{{ task.get_priority_color }}">
+                                                {{ task.get_priority_display }} Priority
+                                            </span>
+                                        </p>
+
+                                        <!-- Due Date -->
+                                        {% if task.due_date %}
+                                            <p class="card-text small text-muted">
+                                                <i class="fas fa-calendar"></i>
+                                                Due {{ task.due_date|naturalday:"SHORT_DATE_FORMAT" }}
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    You haven't created any tasks yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .task-card {
+        border: 1px solid #e0e0e0;
+    }
+    .task-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: var(--primary-color);
+    }
+</style>
+{% endblock %}
