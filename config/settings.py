@@ -81,48 +81,39 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 # Database Configuration
 # Supports DATABASE_URL (Render), PostgreSQL (DB_*), or SQLite
+# Database Configuration
+import dj_database_url
+
 database_url = os.getenv('DATABASE_URL')
 if database_url:
-    import re
-    # Parse postgres:// or postgresql:// URL
-    match = re.match(r'postgres(?:ql)?://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', database_url)
-    if match:
-        _user, _password, _host, _port, _name = match.groups()
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': _name.split('?')[0],
-                'USER': _user,
-                'PASSWORD': _password,
-                'HOST': _host,
-                'PORT': _port,
-                'OPTIONS': {'sslmode': 'require'} if 'render.com' in _host else {},
-            }
+    # Use dj_database_url for reliable parsing
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+elif os.getenv('USE_POSTGRES', 'False') == 'True':
+    # Manual PostgreSQL configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'team_todo_db'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
         }
-    else:
-        DATABASES = {'default': {}}
+    }
 else:
-    DATABASES = {'default': {}}
-
-if not DATABASES.get('default') or not DATABASES['default'].get('ENGINE'):
-    if os.getenv('USE_POSTGRES', 'False') == 'True':
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': os.getenv('DB_NAME', 'team_todo_db'),
-                'USER': os.getenv('DB_USER', 'postgres'),
-                'PASSWORD': os.getenv('DB_PASSWORD', ''),
-                'HOST': os.getenv('DB_HOST', 'localhost'),
-                'PORT': os.getenv('DB_PORT', '5432'),
-            }
+    # SQLite for local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
-    else:
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
