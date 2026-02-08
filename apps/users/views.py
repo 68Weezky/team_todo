@@ -1,6 +1,8 @@
 """
 Views for user authentication and profile management.
 """
+import logging
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -9,6 +11,8 @@ from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse_lazy
 from .models import CustomUser, Team, TeamMembership, Task
+
+logger = logging.getLogger(__name__)
 from .forms import (
     CustomUserCreationForm,
     CustomUserChangeForm,
@@ -24,35 +28,35 @@ def home(request):
     context = {}
     
     if request.user.is_authenticated:
-        # Calculate team count based on user role
-        if request.user.is_admin:
-            # Admins see all active teams
-            team_count = Team.objects.filter(is_active=True).count()
-        elif request.user.is_team_leader:
-            # Leaders see teams they lead + teams they're members of
-            led_teams = Team.objects.filter(leader=request.user, is_active=True).count()
-            member_teams = TeamMembership.objects.filter(
-                member=request.user,
-                team__is_active=True
-            ).exclude(team__leader=request.user).count()
-            team_count = led_teams + member_teams
-        else:
-            # Members see only teams they're in
-            team_count = TeamMembership.objects.filter(
-                member=request.user,
+        try:
+            # Calculate team count based on user role
+            if request.user.is_admin():
+                team_count = Team.objects.filter(is_active=True).count()
+            elif request.user.is_team_leader():
+                led_teams = Team.objects.filter(leader=request.user, is_active=True).count()
+                member_teams = TeamMembership.objects.filter(
+                    member=request.user,
+                    team__is_active=True
+                ).exclude(team__leader=request.user).count()
+                team_count = led_teams + member_teams
+            else:
+                team_count = TeamMembership.objects.filter(
+                    member=request.user,
+                    team__is_active=True
+                ).count()
+            context['user_team_count'] = team_count
+        except Exception:
+            context['user_team_count'] = 0
+
+        try:
+            active_tasks_count = Task.objects.filter(
+                assigned_to=request.user,
+                status__in=['not_started', 'in_progress', 'review'],
                 team__is_active=True
             ).count()
-        
-        context['user_team_count'] = team_count
-        
-        # Calculate active tasks for authenticated user
-        # Active tasks are tasks that are not completed
-        active_tasks_count = Task.objects.filter(
-            assigned_to=request.user,
-            status__in=['not_started', 'in_progress', 'review'],
-            team__is_active=True
-        ).count()
-        context['active_tasks_count'] = active_tasks_count
+            context['active_tasks_count'] = active_tasks_count
+        except Exception:
+            context['active_tasks_count'] = 0
     
     return render(request, 'home.html', context)
 
@@ -67,13 +71,20 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            messages.success(
-                request,
-                f'Account created successfully! Welcome {user.get_display_name()}.'
-            )
-            login(request, user)
-            return redirect('home')
+            try:
+                user = form.save()
+                messages.success(
+                    request,
+                    f'Account created successfully! Welcome {user.get_display_name()}.'
+                )
+                login(request, user)
+                return redirect('home')
+            except Exception as e:
+                logger.exception('Registration failed: %s', e)
+                messages.error(
+                    request,
+                    'Registration failed. Please try again or use a different email.'
+                )
         else:
             for field, errors in form.errors.items():
                 for error in errors:
