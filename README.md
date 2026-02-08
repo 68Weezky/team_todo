@@ -187,8 +187,9 @@ Push code to GitHub (no `venv/`, `.env`, `db.sqlite3`, or `sqlite_data.json` in 
 
 - **Build Command:**  
   `pip install -r requirements.txt && python manage.py collectstatic --noinput`
-- **Start Command:**  
-  `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
+- **Start Command:** Either leave **blank** (Render uses the Procfile) or set:  
+  `python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`  
+  Migrations run on every deploy so you don’t need a paid Shell to run them.
 - **Root Directory:** Leave blank if `manage.py` is at repo root; if app is in `team_todo/`, set **Root Directory** to `team_todo`.
 
 ### 4. Environment variables (Render dashboard)
@@ -197,7 +198,7 @@ Set in Web Service → Environment:
 
 - `DEBUG` = `False`
 - `SECRET_KEY` = (generate: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`)
-- `ALLOWED_HOSTS` = `yourapp.onrender.com` (and any custom domain)
+- `ALLOWED_HOSTS` = `yourapp.onrender.com` (optional on Render; the app auto-allows `RENDER_EXTERNAL_HOSTNAME`). Add this if you use a custom domain.
 - `USE_POSTGRES` = `True`
 - Either:
   - **Option A:** Add **PostgreSQL** as linked resource and set `DATABASE_URL` (Render sets it automatically), **or**
@@ -205,14 +206,14 @@ Set in Web Service → Environment:
 
 Optional: `EMAIL_*` for production email.
 
-### 5. Migrate and optional loaddata
+### 5. First-time setup after deploy
 
-After first deploy, run migrations (and optionally load a fixture):
+Migrations run automatically on every deploy (see Procfile / Start Command). You do **not** need to run them manually.
 
-- **Shell** (Render dashboard → Shell):  
-  `python manage.py migrate`  
-  `python manage.py createsuperuser`  
-  Optionally: `python manage.py loaddata sqlite_data.json` (if you uploaded the file or ran dumpdata in shell).
+- **Create an admin user:** Use Render **Shell** (if available) or run locally with `DATABASE_URL` or `DB_*` set to your Render Postgres:  
+  `python manage.py createsuperuser`
+- **Optional – load existing data:** If you have `sqlite_data.json`, upload it (e.g. via Shell) and run:  
+  `python manage.py loaddata sqlite_data.json`
 
 ### 6. Cron Job (Render)
 
@@ -260,6 +261,12 @@ Run `python manage.py collectstatic --noinput` and ensure WhiteNoise is in `MIDD
 
 **Permission denied**  
 Ensure user role is set correctly in Admin (`/admin/`).
+
+**400 Bad Request on Render**  
+The app auto-adds Render’s host to `ALLOWED_HOSTS`. If you use a custom domain, add it in Environment: `ALLOWED_HOSTS=yourapp.onrender.com,yourdomain.com`.
+
+**500 on register (or after deploy)**  
+Migrations must run before the app serves traffic. Use the Start Command that includes `python manage.py migrate --noinput &&` (or leave Start Command blank so the Procfile is used).
 
 ---
 

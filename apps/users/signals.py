@@ -14,7 +14,10 @@ def create_notification_preference(sender, instance, created, **kwargs):
     Create NotificationPreference instance when CustomUser is created.
     """
     if created:
-        NotificationPreference.objects.get_or_create(user=instance)
+        try:
+            NotificationPreference.objects.get_or_create(user=instance)
+        except Exception:
+            pass  # Table may not exist yet (migrations pending)
 
 
 @receiver(post_save, sender=CustomUser)
